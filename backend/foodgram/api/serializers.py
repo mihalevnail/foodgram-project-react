@@ -1,5 +1,3 @@
-from django.contrib.auth.password_validation import validate_password
-from django.core import exceptions as django_exceptions
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_base64.fields import Base64ImageField
 
@@ -20,11 +18,8 @@ class UserReadSerializer(UserSerializer):
                   'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        if (self.context.get('request')
-           and not self.context['request'].user.is_anonymous):
-            return Subscribe.objects.filter(user=self.context['request'].user,
-                                            author=obj).exists()
-        return False
+        return Subscribe.objects.filter(user=self.context['request'].user,
+                                        author=obj).exists()
 
 
 class UserCreateSerializer(UserCreateSerializer):
@@ -40,14 +35,14 @@ class UserCreateSerializer(UserCreateSerializer):
             'email': {'required': True, 'allow_blank': False},
         }
 
-    def validate(self, obj):
+    def validate_username(self, obj):
         invalid_usernames = ['me', 'set_password',
                              'subscriptions', 'subscribe']
         if self.initial_data.get('username') in invalid_usernames:
             raise serializers.ValidationError(
                 {'username': 'Вы не можете использовать этот username.'}
             )
-        return obj
+        return super().obj
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -98,7 +93,7 @@ class SubscribeAuthorSerializer(serializers.ModelSerializer):
                   'username', 'first_name',
                   'last_name', 'is_subscribed',)
 
-    def validate(self, obj):
+    def validate_subscribe(self, obj):
         if (self.context['request'].user == obj):
             raise serializers.ValidationError({'errors': 'Ошибка подписки.'})
         return obj
@@ -208,7 +203,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time': {'required': True},
         }
 
-    def validate(self, obj):
+    def validate_tag(self, obj):
         if not obj.get('tags'):
             raise serializers.ValidationError(
                 {'tags': 'Нужно указать минимум 1 тег.'}
