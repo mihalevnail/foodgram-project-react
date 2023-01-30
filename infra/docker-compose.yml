@@ -23,7 +23,7 @@ services:
         - ./.env
 
   frontend:
-    image: mihalev/foodgram-project:latest
+    image: mihalev/foodgram-frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
