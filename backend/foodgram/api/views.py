@@ -4,18 +4,18 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from users.models import Subscribe, User
+from .pagination import CustomPaginator
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeReadSerializer, RecipeSerializer,
-                          SubscribeAuthorSerializer,
+                          SubscribeAuthorSerializer, SetPasswordSerializer,
                           SubscriptionsSerializer, TagSerializer,
                           UserCreateSerializer, UserReadSerializer)
 
@@ -25,7 +25,7 @@ class UserViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
     queryset = User.objects.all()
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPaginator
     permission_classes = (AllowAny,)
 
     def get_serializer_class(self):
@@ -41,12 +41,19 @@ class UserViewSet(mixins.CreateModelMixin,
         return Response(serializer.data,
                         status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'],
+    @action(detail=False, methods=['post'],
             permission_classes=(IsAuthenticated,))
+    def set_password(self, request):
+        serializer = SetPasswordSerializer(request.user, data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+        return Response({'detail': 'Пароль успешно изменен!'},
+                        status=status.HTTP_204_NO_CONTENT)
+
     def subscriptions(self, request):
         queryset = User.objects.filter(subscribing__user=request.user)
-        pages = self.paginate_queryset(queryset)
-        serializer = SubscriptionsSerializer(pages, many=True,
+        page = self.paginate_queryset(queryset)
+        serializer = SubscriptionsSerializer(page, many=True,
                                              context={'request': request})
         return self.get_paginated_response(serializer.data)
 
@@ -92,7 +99,7 @@ class TagViewSet(mixins.ListModelMixin,
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    pagination_class = PageNumberPagination
+    pagination_class = CustomPaginator
     permission_classes = (IsAuthorOrReadOnly, )
     filter_backends = (DjangoFilterBackend, )
     filterset_class = RecipeFilter
@@ -127,7 +134,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
-            permission_classes=(IsAuthenticated,))
+            permission_classes=(IsAuthenticated,),
+            pagination_class=None)
     def shopping_cart(self, request, **kwargs):
         recipe = get_object_or_404(Recipe, id=kwargs['pk'])
 

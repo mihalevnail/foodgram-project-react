@@ -14,13 +14,13 @@ class Ingredient(models.Model):
         max_length=200
     )
 
-    def __str__(self):
-        return f'{self.name}, {self.measurement_unit}'
-
     class Meta:
         ordering = ['name']
         verbose_name = 'Ингридиент'
         verbose_name_plural = 'Ингридиенты'
+
+    def __str__(self):
+        return f'{self.name}, {self.measurement_unit}'
 
 
 class Tag(models.Model):
@@ -47,12 +47,12 @@ class Tag(models.Model):
         null=True
     )
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -84,7 +84,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        through='RecipeIngredient',
+        through='Recipe_ingredient',
         through_fields=('recipe', 'ingredient'),
         verbose_name='Ингредиенты'
     )
@@ -93,13 +93,13 @@ class Recipe(models.Model):
         verbose_name='Теги'
     )
 
-    def __str__(self):
-        return self.name
-
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -120,12 +120,6 @@ class RecipeIngredient(models.Model):
         validators=[MinValueValidator(1)]
     )
 
-    def __str__(self):
-        return (f'{self.recipe.name}: '
-                f'{self.ingredient.name} - '
-                f'{self.amount} '
-                f'{self.ingredient.measurement_unit}')
-
     class Meta:
         verbose_name = 'Ингредиенты в рецепте'
         verbose_name_plural = 'Ингредиенты в рецептах'
@@ -135,6 +129,12 @@ class RecipeIngredient(models.Model):
                 name='unique_combination'
             )
         ]
+
+    def __str__(self):
+        return (f'{self.recipe.name}: '
+                f'{self.ingredient.name} - '
+                f'{self.amount} '
+                f'{self.ingredient.measurement_unit}')
 
 
 class Favorite(models.Model):
@@ -151,9 +151,6 @@ class Favorite(models.Model):
         verbose_name='Избранный рецепт'
     )
 
-    def __str__(self):
-        return f'{self.user.username} - {self.recipe.name}'
-
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
@@ -163,6 +160,9 @@ class Favorite(models.Model):
                 name='unique_favorite'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user.username} - {self.recipe.name}'
 
 
 class ShoppingCart(models.Model):
@@ -179,9 +179,6 @@ class ShoppingCart(models.Model):
         verbose_name='Рецепт в корзине'
     )
 
-    def __str__(self):
-        return f'{self.user.username} - {self.recipe.name}'
-
     class Meta:
         verbose_name = 'Корзина'
         verbose_name_plural = 'Корзина'
@@ -191,3 +188,6 @@ class ShoppingCart(models.Model):
                 name='unique_shopping_cart'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user.username} - {self.recipe.name}'

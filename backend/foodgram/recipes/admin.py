@@ -37,15 +37,9 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('name', 'author', 'tags')
     empty_value_display = '-пусто-'
 
-    def get_favorites(self, obj):
-        return obj.favorites.count()
-    get_favorites.short_description = 'Избранное'
-
-    def get_ingredients(self, obj):
-        return ', '.join([
-            ingredients.name for ingredients
-            in obj.ingredients.all()])
-    get_ingredients.short_description = 'Ингридиенты'
+    @admin.display(description='В избранном')
+    def in_favorites(self, obj):
+        return obj.favorite_recipe.count()
 
 
 @admin.register(models.RecipeIngredient)
